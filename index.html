@@ -10,6 +10,7 @@
 <body>
 <header class="bar">
   <h1>Bolso</h1>
+  <button id="priv" class="sec" aria-pressed="false">Ocultar valores</button>
   <div class="mes">
     <button id="ant" class="sec" aria-label="Mês anterior">‹</button>
     <input type="month" id="mes" aria-label="Mês">
@@ -21,6 +22,7 @@
     <p class="lbl">Saldo do mês</p>
     <p class="saldo" id="saldo">R$ 0,00</p>
     <p class="duo"><span>Entrou <b id="ent" class="pos">R$ 0,00</b></span><span>Saiu <b id="sai" class="neg">R$ 0,00</b></span></p>
+    <p class="mu" id="cmp"></p>
   </section>
 
   <section class="novo">
@@ -36,7 +38,12 @@
       </div>
       <fieldset class="chips" id="cat" aria-label="Categoria"></fieldset>
       <label>Descrição (opcional)<input id="desc" maxlength="60" placeholder="Ex.: Mercado"></label>
-      <button type="submit" class="pri">Adicionar</button>
+      <div class="duas" id="repbox">
+        <label>Repetir por (meses)<input id="rep" type="number" min="1" max="60" value="1"></label>
+        <label class="ck"><input type="checkbox" id="parc"> Dividir o valor (parcelado)</label>
+      </div>
+      <button type="submit" class="pri" id="sub">Adicionar</button>
+      <button type="button" class="sec" id="canc" hidden>Cancelar edição</button>
     </form>
   </section>
 
@@ -54,8 +61,22 @@
   </section>
 
   <section class="lista">
-    <div class="lh"><h2>Lançamentos</h2><button id="csv" class="sec">Exportar CSV</button></div>
+    <div class="lh"><h2>Lançamentos</h2><input id="busca" type="search" placeholder="Buscar…" aria-label="Buscar lançamentos"></div>
     <ul id="lista"></ul>
+  </section>
+  <section class="dados">
+    <h2>Planilhas e backup</h2>
+    <p class="mu">Colunas das planilhas: Data, Tipo (Entrada ou Saída), Categoria, Descrição e Valor. Ao importar, lançamentos repetidos são ignorados.</p>
+    <div class="btns">
+      <button id="csv" class="sec">Exportar CSV</button>
+      <button id="xlsx" class="sec">Exportar XLSX</button>
+      <button id="imp" class="sec">Importar CSV/XLSX</button>
+      <button id="bk" class="sec">Backup (JSON)</button>
+      <button id="rs" class="sec">Restaurar backup</button>
+    </div>
+    <input type="file" id="arq" accept=".csv,.xlsx,.xls" hidden>
+    <input type="file" id="arqb" accept=".json" hidden>
+    <p id="imsg" class="mu" role="status"></p>
   </section>
 </main>
 <footer>Seus dados ficam só neste navegador, neste aparelho. Nada é enviado para a internet.</footer>
