@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Registre receitas e despesas em segundos, acompanhe seu limite de gastos e veja para onde vai o seu dinheiro.">
+<title>Bolso – organize sua vida financeira</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <h1>Bolso</h1>
+  <div class="mes">
+    <button id="ant" class="sec" aria-label="Mês anterior">‹</button>
+    <input type="month" id="mes" aria-label="Mês">
+    <button id="prox" class="sec" aria-label="Próximo mês">›</button>
+  </div>
+</header>
+<main>
+  <section class="hero" aria-live="polite">
+    <p class="lbl">Saldo do mês</p>
+    <p class="saldo" id="saldo">R$ 0,00</p>
+    <p class="duo"><span>Entrou <b id="ent" class="pos">R$ 0,00</b></span><span>Saiu <b id="sai" class="neg">R$ 0,00</b></span></p>
+  </section>
+
+  <section class="novo">
+    <h2>Novo lançamento</h2>
+    <form id="f" autocomplete="off">
+      <div class="tipo" role="radiogroup" aria-label="Tipo">
+        <label><input type="radio" name="tipo" value="out" checked><span>Saída</span></label>
+        <label><input type="radio" name="tipo" value="in"><span>Entrada</span></label>
+      </div>
+      <div class="duas">
+        <label>Valor (R$)<input id="valor" inputmode="decimal" required placeholder="0,00" autofocus></label>
+        <label>Data<input type="date" id="data" required></label>
+      </div>
+      <fieldset class="chips" id="cat" aria-label="Categoria"></fieldset>
+      <label>Descrição (opcional)<input id="desc" maxlength="60" placeholder="Ex.: Mercado"></label>
+      <button type="submit" class="pri">Adicionar</button>
+    </form>
+  </section>
+
+  <section class="limite">
+    <div class="lh"><h2>Limite de gastos</h2>
+      <div class="row"><input id="lim" inputmode="decimal" placeholder="Ex.: 3.000,00" aria-label="Limite mensal de gastos"><button id="setlim" class="sec">Definir</button></div>
+    </div>
+    <div class="barra"><i id="lbar"></i></div>
+    <p id="ltxt" class="mu"></p>
+  </section>
+
+  <section class="cats">
+    <h2>Para onde foi o dinheiro</h2>
+    <div id="cats"></div>
+  </section>
+
+  <section class="lista">
+    <div class="lh"><h2>Lançamentos</h2><button id="csv" class="sec">Exportar CSV</button></div>
+    <ul id="lista"></ul>
+  </section>
+</main>
+<footer>Seus dados ficam só neste navegador, neste aparelho. Nada é enviado para a internet.</footer>
+<div id="toast" class="toast" role="status" hidden><span>Lançamento apagado.</span><button id="undo">Desfazer</button></div>
+<script src="script.js" defer></script>
+</body>
+</html>
