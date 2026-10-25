@@ -18,8 +18,9 @@
     <button id="hojeb" class="sec">Hoje</button>
   </div>
 </header>
+<nav class="abas" aria-label="Seções"><button data-a="ctl" class="on" aria-pressed="true">Controle</button><button data-a="contas" id="tabc" class="sec" aria-pressed="false">Contas</button><button data-a="div" class="sec" aria-pressed="false">Dívidas</button></nav>
 <div id="aviso" class="aviso" role="alert" hidden>Não consegui salvar neste navegador. Seus dados podem se perder: use "Backup (JSON)" agora.</div>
-<main>
+<main id="main-ctl">
   <section class="hero" aria-live="polite">
     <p class="lbl">Saldo do mês</p>
     <p class="saldo" id="saldo">R$ 0,00</p>
@@ -90,6 +91,76 @@
     <p id="imsg" class="mu" role="status"></p>
   </section>
 </main>
+<main id="v-contas" class="simples" hidden>
+  <section class="card">
+    <h2>Nova conta a pagar</h2>
+    <form id="fc" autocomplete="off">
+      <label>Nome<input id="cn" maxlength="40" required placeholder="Ex.: Aluguel, luz, fatura do cartão"></label>
+      <div class="duas">
+        <label>Valor (R$)<input id="cv" inputmode="decimal" required placeholder="0,00"></label>
+        <label>Vencimento<input type="date" id="cd" required></label>
+      </div>
+      <label class="ck"><input type="checkbox" id="cr"> Repete todo mês</label>
+      <button type="submit" class="pri">Adicionar conta</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Contas a pagar</h2>
+    <p id="cres" class="mu"></p>
+    <ul id="clista"></ul>
+  </section>
+</main>
+
+<main id="v-dividas" class="simples" hidden>
+  <section class="card">
+    <h2>Minhas dívidas</h2>
+    <form id="fd" autocomplete="off">
+      <label>Nome da dívida<input id="dn" maxlength="40" required placeholder="Ex.: Cartão, cheque especial, empréstimo"></label>
+      <div class="duas">
+        <label>Saldo devedor (R$)<input id="ds" inputmode="decimal" required></label>
+        <label>Juros ao mês (%)<input id="dj" inputmode="decimal" required placeholder="Ex.: 12,5"></label>
+      </div>
+      <label>Parcela mínima por mês (R$)<input id="dm" inputmode="decimal" required placeholder="0 se não houver"></label>
+      <button type="submit" class="pri">Adicionar dívida</button>
+    </form>
+    <p id="dres" class="mu"></p>
+    <ul id="dlista"></ul>
+  </section>
+  <section class="card">
+    <h2>Plano para quitar</h2>
+    <label>Quanto você consegue pagar por mês, no total (R$)?<input id="pg" inputmode="decimal" placeholder="0,00"></label>
+    <div class="tipo" role="radiogroup" aria-label="Método">
+      <label><input type="radio" name="met" value="av" checked><span>Juros mais altos primeiro</span></label>
+      <label><input type="radio" name="met" value="bn"><span>Menor dívida primeiro</span></label>
+    </div>
+    <div id="plano"></div>
+  </section>
+  <section class="card">
+    <h2>Parcelou? Descubra o juros</h2>
+    <form id="fj" autocomplete="off">
+      <div class="duas">
+        <label>Preço à vista (R$)<input id="jv" inputmode="decimal" required></label>
+        <label>Nº de parcelas<input id="jn" type="number" min="1" max="120" required></label>
+      </div>
+      <label>Valor de cada parcela (R$)<input id="jp" inputmode="decimal" required></label>
+      <button type="submit" class="pri">Calcular juros</button>
+    </form>
+    <p id="jres" class="mu" aria-live="polite"></p>
+  </section>
+  <section class="card">
+    <h2>Dicas para sair do aperto</h2>
+    <ul class="dicas">
+      <li>Cartão rotativo e cheque especial costumam estar entre os juros mais altos. Comece por eles.</li>
+      <li>Pagar só o mínimo da fatura joga o resto para o rotativo. Se não der para pagar tudo, compare o custo efetivo total (CET) de um parcelamento da fatura.</li>
+      <li>Antes de pagar, peça ao credor uma proposta de quitação ou renegociação e compare. Desconfie de quem cobra para "limpar seu nome".</li>
+      <li>Procure canais oficiais: o próprio banco ou loja, o Procon e a Defensoria Pública. A Lei do Superendividamento (Lei 14.181/2021) prevê renegociação com vários credores ao mesmo tempo.</li>
+      <li>Regra prática comum: manter as parcelas de dívidas abaixo de cerca de 30% da renda.</li>
+      <li>Evite pagar uma dívida criando outra com juros maior.</li>
+    </ul>
+    <p class="mu">O Bolso organiza e simula. Não é aconselhamento financeiro, e as taxas e regras mudam: confirme sempre com o credor.</p>
+  </section>
+</main>
+
 <footer>Seus dados ficam só neste navegador, neste aparelho. Nada é enviado para a internet.</footer>
 <div id="toast" class="toast" role="status" hidden><span>Lançamento apagado.</span><button id="undo">Desfazer</button></div>
 <script src="script.js" defer></script>

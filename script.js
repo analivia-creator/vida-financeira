@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s);
 const brl=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const CATS={out:['Moradia','Alimentação','Transporte','Saúde','Educação','Lazer','Contas','Outros'],in:['Salário','Extra','Investimentos','Outros']};
-let D={v:1,tx:[],lim:0,tipo:'out',last:{},cats:{out:[],in:[]}};
+let D={v:1,tx:[],lim:0,tipo:'out',last:{},cats:{out:[],in:[]},dividas:[],contas:[]};
 try{D=Object.assign(D,JSON.parse(localStorage.getItem('bolso')||'{}'))}catch(e){}
 if(D.tipo!=='in')D.tipo='out';
 const save=()=>{try{localStorage.setItem('bolso',JSON.stringify(D));$('#aviso').hidden=true}catch(e){$('#aviso').hidden=false}};
@@ -178,6 +178,83 @@ $('#arqb').addEventListener('change',async e=>{
   }catch(x){msg('Esse arquivo não parece um backup do Bolso.')}
 });
 
+const VS={ctl:'main-ctl',contas:'v-contas',div:'v-dividas'};
+function aba(k){
+  Object.entries(VS).forEach(([n,id])=>$('#'+id).hidden=n!==k);
+  document.querySelectorAll('.abas button').forEach(b=>{const on=b.dataset.a===k;b.className=on?'on':'sec';b.setAttribute('aria-pressed',on)});
+  if(k==='contas')rc();if(k==='div')rd();scrollTo(0,0);
+}
+document.querySelectorAll('.abas button').forEach(b=>b.addEventListener('click',()=>aba(b.dataset.a)));
+
+const dias=v=>Math.round((new Date(v+'T00:00')-new Date(hoje()+'T00:00'))/864e5);
+function badge(){const n=D.contas.filter(c=>!c.pago&&dias(c.venc)<=3).length;$('#tabc').textContent='Contas'+(n?` (${n})`:'')}
+function rc(){
+  const L=[...D.contas].sort((a,b)=>(a.pago-b.pago)||a.venc.localeCompare(b.venc)),ab=L.filter(c=>!c.pago),atr=ab.filter(c=>dias(c.venc)<0);
+  $('#cres').textContent=ab.length?`Em aberto: ${brl(r2(ab.reduce((a,c)=>a+c.valor,0)))}${atr.length?` · ${atr.length} atrasada(s)`:''}`:'Nenhuma conta em aberto.';
+  $('#clista').innerHTML=L.length?L.map(c=>{const d=dias(c.venc),st=c.pago?'Paga':d<0?`Atrasada há ${-d} dia(s)`:d===0?'Vence hoje':`Vence em ${d} dia(s)`;
+    return `<li class="${c.pago?'paga':d<0?'atr':''}"><span>${esc(c.nome)}<small>${dmy(c.venc)} · ${st}${c.rec?' · todo mês':''}</small></span><span class="v">${brl(c.valor)}</span><span class="acts"><button data-pg="${c.id}">${c.pago?'Desfazer':'Pagar'}</button><button data-cx="${c.id}" aria-label="Apagar ${esc(c.nome)}">Apagar</button></span></li>`}).join(''):'<li class="vazio">Cadastre suas contas com vencimento para não esquecer nenhuma.</li>';
+  badge();
+}
+$('#fc').addEventListener('submit',e=>{
+  e.preventDefault();const v=num($('#cv').value),d=$('#cd').value,n=$('#cn').value.trim();if(!n||!(v>0)||!d)return;
+  D.contas.push({id:Date.now(),nome:n.slice(0,40),valor:r2(v),venc:d,pago:false,rec:$('#cr').checked});save();e.target.reset();$('#cd').value=hoje();rc();
+});
+$('#clista').addEventListener('click',e=>{
+  const p=e.target.closest('[data-pg]'),x=e.target.closest('[data-cx]');
+  if(x){D.contas=D.contas.filter(c=>String(c.id)!==x.dataset.cx);save();rc();return}
+  if(!p)return;const c=D.contas.find(k=>String(k.id)===p.dataset.pg);if(!c)return;
+  if(!c.pago){
+    const tid=Date.now();D.tx.push({id:tid,desc:c.nome,val:c.valor,type:'out',cat:'Contas',date:hoje()});c.pago=true;c.tx=tid;
+    if(c.rec){c.next=tid+1;D.contas.push({id:c.next,nome:c.nome,valor:c.valor,venc:addM(c.venc,1),pago:false,rec:true})}
+  }else{D.tx=D.tx.filter(t=>t.id!==c.tx);D.contas=D.contas.filter(k=>!(k.id===c.next&&!k.pago));c.pago=false;delete c.tx;delete c.next}
+  save();rc();render();
+});
+
+function sim(met,total){
+  const L=D.dividas.map(d=>({n:d.nome,s:d.saldo,i:d.juros/100,m:d.min})),mn=L.reduce((a,d)=>a+d.m,0);
+  if(total<mn)return{erro:`O valor mensal precisa cobrir ao menos as parcelas mínimas (${brl(r2(mn))}).`};
+  let meses=0,jur=0;const ord=[];
+  while(L.some(d=>d.s>0.005)&&meses<600){
+    meses++;L.forEach(d=>{if(d.s>0){const j=d.s*d.i;d.s+=j;jur+=j}});
+    let sobra=total;L.forEach(d=>{if(d.s>0){const p=Math.min(d.m,d.s);d.s-=p;sobra-=p}});
+    for(const d of L.filter(d=>d.s>0.005).sort(met==='av'?(a,b)=>b.i-a.i:(a,b)=>a.s-b.s)){if(sobra<=0)break;const p=Math.min(sobra,d.s);d.s-=p;sobra-=p}
+    L.forEach(d=>{if(d.s<=0.005&&!d.q){d.q=1;ord.push(`${d.n} (mês ${meses})`)}});
+  }
+  return meses>=600?{erro:'Com esse valor a dívida não quita: os juros crescem mais do que você paga. Tente aumentar o valor mensal ou renegociar.'}:{meses,jur,ord};
+}
+function rp(){
+  const el=$('#plano'),tot=num($('#pg').value);
+  if(!D.dividas.length){el.textContent='Cadastre suas dívidas para simular.';return}
+  if(!(tot>0)){el.textContent='Informe quanto você consegue pagar por mês.';return}
+  const met=document.querySelector('input[name=met]:checked').value,a=sim(met,tot),b=sim(met==='av'?'bn':'av',tot);
+  if(a.erro){el.textContent=a.erro;return}
+  const t=m=>(Math.floor(m/12)?Math.floor(m/12)+' ano(s) e ':'')+(m%12)+' mês(es)';
+  el.innerHTML=`<p>Você quita tudo em <b>${t(a.meses)}</b>, pagando <b>${brl(r2(a.jur))}</b> de juros.</p><p class="mu">Ordem de quitação: ${esc(a.ord.join(' → '))}</p>`+(b.erro?'':`<p class="mu">Pelo outro método: ${t(b.meses)} e ${brl(r2(b.jur))} de juros.</p>`);
+}
+function rd(){
+  const ds=D.dividas,tot=ds.reduce((a,d)=>a+d.saldo,0),jm=ds.reduce((a,d)=>a+d.saldo*d.juros/100,0),mn=ds.reduce((a,d)=>a+d.min,0);
+  const rend=sum(D.tx.filter(t=>t.date.startsWith(hoje().slice(0,7))),'in');
+  $('#dres').innerHTML=ds.length?`Total devedor: <b>${brl(r2(tot))}</b><br>Só de juros, elas custam cerca de <b>${brl(r2(jm))}</b> por mês.<br>Parcelas mínimas: <b>${brl(r2(mn))}</b>${rend>0&&mn>0?` (${Math.round(mn/rend*100)}% da renda lançada neste mês${mn/rend>.3?', acima da regra prática de 30%':''})`:''}.`:'Nenhuma dívida cadastrada.';
+  $('#dlista').innerHTML=ds.map(d=>`<li><span>${esc(d.nome)}<small>${String(d.juros).replace('.',',')}% ao mês · mínimo ${brl(d.min)}</small></span><span class="v neg">${brl(d.saldo)}</span><span class="acts"><button data-dx="${d.id}" aria-label="Apagar ${esc(d.nome)}">Apagar</button></span></li>`).join('');
+  rp();
+}
+$('#fd').addEventListener('submit',e=>{
+  e.preventDefault();const s=num($('#ds').value),j=num($('#dj').value),m=num($('#dm').value),n=$('#dn').value.trim();
+  if(!n||!(s>0)||!(j>=0)||!(m>=0))return;
+  D.dividas.push({id:Date.now(),nome:n.slice(0,40),saldo:r2(s),juros:j,min:r2(m)});save();e.target.reset();rd();
+});
+$('#dlista').addEventListener('click',e=>{const x=e.target.closest('[data-dx]');if(!x)return;D.dividas=D.dividas.filter(d=>String(d.id)!==x.dataset.dx);save();rd()});
+$('#pg').addEventListener('input',rp);
+document.querySelectorAll('input[name=met]').forEach(r=>r.addEventListener('change',rp));
+$('#fj').addEventListener('submit',e=>{
+  e.preventDefault();const pv=num($('#jv').value),n=parseInt($('#jn').value),p=num($('#jp').value),o=$('#jres');
+  if(!(pv>0)||!(n>0)||!(p>0)){o.textContent='Preencha os três campos.';return}
+  const tot=p*n;if(tot<=pv+0.005){o.textContent='Esse parcelamento não tem juros.';return}
+  let lo=0,hi=1;for(let i=0;i<80;i++){const r=(lo+hi)/2;(p*(1-Math.pow(1+r,-n))/r>pv)?lo=r:hi=r}
+  const r=(lo+hi)/2;
+  o.innerHTML=`Juros de <b>${(r*100).toFixed(2).replace('.',',')}% ao mês</b> (cerca de ${(((1+r)**12-1)*100).toFixed(0)}% ao ano). Você paga ${brl(r2(tot))}, ou seja, ${brl(r2(tot-pv))} a mais que à vista.`;
+});
+
 $('#busca').addEventListener('input',render);
 $('#ftipo').addEventListener('change',render);
 $('#hojeb').addEventListener('click',()=>{$('#mes').value=hoje().slice(0,7);syncData();render()});
@@ -194,4 +271,4 @@ pv();
 document.querySelector(`input[name=tipo][value=${D.tipo}]`).checked=true;
 $('#mes').value=hoje().slice(0,7);$('#data').value=hoje();
 if(D.lim>0)$('#lim').value=String(D.lim).replace('.',',');
-cats();render();save();
+$('#cd').value=hoje();badge();cats();render();save();

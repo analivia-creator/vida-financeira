@@ -9,7 +9,7 @@ h2{margin:0 0 12px;font-size:1.05rem}
 main{max-width:980px;margin:0 auto;padding:0 16px 24px;display:grid;gap:16px;grid-template-columns:1fr 1.2fr;grid-template-areas:"hero hero" "novo lista" "lim lista" "cats lista" "graf lista" "dados dados"}
 .hero{grid-area:hero;padding:8px 0 4px}
 .limite{grid-area:lim}.novo{grid-area:novo}.cats{grid-area:cats}.lista{grid-area:lista}
-.limite,.novo,.cats,.lista,.dados,.graf{background:var(--pn);border:1px solid var(--bd);border-radius:var(--r);padding:18px}
+.limite,.novo,.cats,.lista,.dados,.graf,.card{background:var(--pn);border:1px solid var(--bd);border-radius:var(--r);padding:18px}
 .lbl{margin:0;color:var(--mu)}
 .saldo{margin:0;font-size:clamp(2.6rem,9vw,4.4rem);font-weight:700;letter-spacing:-.03em;line-height:1.1;font-variant-numeric:tabular-nums}
 .saldo.neg{color:var(--neg)}
@@ -91,3 +91,15 @@ li.dia{grid-template-columns:1fr auto;color:var(--mu);font-size:.85rem;padding:1
 .bars i{display:block;width:40%;min-height:2px;border-radius:4px 4px 0 0}
 .bars .e{background:var(--pos)}.bars .s{background:var(--neg)}
 .col small{color:var(--mu)}
+
+.abas{max-width:980px;margin:0 auto 12px;padding:0 16px;display:flex;gap:6px;flex-wrap:wrap}
+.abas button.on{background:var(--pr);color:var(--prt);border-color:var(--pr);font-weight:600}
+.simples{display:block;max-width:640px}
+.simples>section{margin-bottom:16px}
+.simples ul{margin-top:8px}
+.simples label{display:block}
+.dicas{list-style:disc;padding-left:1.2em}
+.dicas li{display:list-item;border:0;padding:4px 0}
+li.atr small{color:var(--neg);font-weight:600}
+li.paga{opacity:.6}
+.priv #cres{filter:blur(9px)}
