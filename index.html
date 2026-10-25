@@ -15,14 +15,17 @@
     <button id="ant" class="sec" aria-label="Mês anterior">‹</button>
     <input type="month" id="mes" aria-label="Mês">
     <button id="prox" class="sec" aria-label="Próximo mês">›</button>
+    <button id="hojeb" class="sec">Hoje</button>
   </div>
 </header>
+<div id="aviso" class="aviso" role="alert" hidden>Não consegui salvar neste navegador. Seus dados podem se perder: use "Backup (JSON)" agora.</div>
 <main>
   <section class="hero" aria-live="polite">
     <p class="lbl">Saldo do mês</p>
     <p class="saldo" id="saldo">R$ 0,00</p>
     <p class="duo"><span>Entrou <b id="ent" class="pos">R$ 0,00</b></span><span>Saiu <b id="sai" class="neg">R$ 0,00</b></span></p>
     <p class="mu" id="cmp"></p>
+    <p class="mu" id="acu"></p>
   </section>
 
   <section class="novo">
@@ -32,16 +35,18 @@
         <label><input type="radio" name="tipo" value="out" checked><span>Saída</span></label>
         <label><input type="radio" name="tipo" value="in"><span>Entrada</span></label>
       </div>
-      <div class="duas">
+      
         <label>Valor (R$)<input id="valor" inputmode="decimal" required placeholder="0,00" autofocus></label>
-        <label>Data<input type="date" id="data" required></label>
-      </div>
       <fieldset class="chips" id="cat" aria-label="Categoria"></fieldset>
+      <details class="mais"><summary>Mais opções (data, descrição, repetir)</summary>
+      <label>Data<input type="date" id="data" required></label>
       <label>Descrição (opcional)<input id="desc" maxlength="60" placeholder="Ex.: Mercado"></label>
       <div class="duas" id="repbox">
         <label>Repetir por (meses)<input id="rep" type="number" min="1" max="60" value="1"></label>
         <label class="ck"><input type="checkbox" id="parc"> Dividir o valor (parcelado)</label>
       </div>
+      <label id="aplicbox" class="ck" hidden><input type="checkbox" id="aplic"> Aplicar também aos próximos meses</label>
+      </details>
       <button type="submit" class="pri" id="sub">Adicionar</button>
       <button type="button" class="sec" id="canc" hidden>Cancelar edição</button>
     </form>
@@ -52,7 +57,7 @@
       <div class="row"><input id="lim" inputmode="decimal" placeholder="Ex.: 3.000,00" aria-label="Limite mensal de gastos"><button id="setlim" class="sec">Definir</button></div>
     </div>
     <div class="barra"><i id="lbar"></i></div>
-    <p id="ltxt" class="mu"></p>
+    <p id="ltxt" class="mu" aria-live="polite"></p>
   </section>
 
   <section class="cats">
@@ -60,8 +65,14 @@
     <div id="cats"></div>
   </section>
 
+  <section class="graf">
+    <h2>Últimos 6 meses</h2>
+    <div id="graf" class="graf6" role="img" aria-label="Gráfico de entradas e saídas"></div>
+    <p class="mu">Verde: entrou · Vermelho: saiu</p>
+  </section>
+
   <section class="lista">
-    <div class="lh"><h2>Lançamentos</h2><input id="busca" type="search" placeholder="Buscar…" aria-label="Buscar lançamentos"></div>
+    <div class="lh"><h2>Lançamentos</h2><div class="row"><input id="busca" type="search" placeholder="Buscar…" aria-label="Buscar lançamentos"><select id="ftipo" aria-label="Filtrar por tipo"><option value="">Todos</option><option value="in">Entradas</option><option value="out">Saídas</option></select></div></div>
     <ul id="lista"></ul>
   </section>
   <section class="dados">

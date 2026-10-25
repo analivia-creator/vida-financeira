@@ -1,20 +1,21 @@
 const $=s=>document.querySelector(s);
 const brl=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const CATS={out:['Moradia','Alimentação','Transporte','Saúde','Educação','Lazer','Contas','Outros'],in:['Salário','Extra','Investimentos','Outros']};
-let D={tx:[],lim:0,tipo:'out',last:{}};
+let D={v:1,tx:[],lim:0,tipo:'out',last:{},cats:{out:[],in:[]}};
 try{D=Object.assign(D,JSON.parse(localStorage.getItem('bolso')||'{}'))}catch(e){}
 if(D.tipo!=='in')D.tipo='out';
-const save=()=>{try{localStorage.setItem('bolso',JSON.stringify(D))}catch(e){}};
+const save=()=>{try{localStorage.setItem('bolso',JSON.stringify(D));$('#aviso').hidden=true}catch(e){$('#aviso').hidden=false}};
 const p2=n=>String(n).padStart(2,'0');
 const hoje=()=>{const d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const num=v=>{v=String(v).trim().replace(/[R$\s]/g,'');if(v.includes(','))v=v.replace(/\./g,'').replace(',','.');const n=parseFloat(v);return isFinite(n)?n:NaN};
+const num=v=>{v=String(v).trim().replace(/[R$\s]/g,'');if(v.includes(','))v=v.replace(/\./g,'').replace(',','.');return /^-?\d+(\.\d+)?$/.test(v)?parseFloat(v):NaN};
 const sum=(L,t)=>L.filter(x=>x.type===t).reduce((a,x)=>a+x.val,0);
 const tipo=()=>document.querySelector('input[name=tipo]:checked').value;
 
+const catL=t=>[...CATS[t],...D.cats[t]];
 function cats(){
-  const t=tipo();let sel=D.last[t]||CATS[t][0];if(!CATS[t].includes(sel))sel=CATS[t][0];
-  $('#cat').innerHTML=CATS[t].map(c=>`<label><input type="radio" name="cat" value="${c}"${c===sel?' checked':''}><span>${c}</span></label>`).join('');
+  const t=tipo(),L=catL(t);let sel=D.last[t]||L[0];if(!L.includes(sel))sel=L[0];
+  $('#cat').innerHTML=L.map(c=>`<label><input type="radio" name="cat" value="${esc(c)}"${c===sel?' checked':''}><span>${esc(c)}</span></label>`).join('')+'<button type="button" id="ncat" class="sec chipbtn">+ Nova</button>';
 }
 function syncData(){
   const m=$('#mes').value;
@@ -34,6 +35,12 @@ function render(){
   const pm=(()=>{const [y,mm]=m.split('-').map(Number),d=new Date(y,mm-2,1);return d.getFullYear()+'-'+p2(d.getMonth()+1)})();
   const ant=sum(D.tx.filter(t=>t.date.startsWith(pm)),'out');
   $('#cmp').textContent=ant>0&&sai>0?`Saídas ${sai>=ant?Math.round((sai/ant-1)*100)+'% acima':Math.round((1-sai/ant)*100)+'% abaixo'} do mês anterior (${brl(ant)}).`:'';
+  const acu=D.tx.filter(t=>t.date.slice(0,7)<=m).reduce((a,t)=>a+(t.type==='in'?t.val:-t.val),0);
+  $('#acu').textContent=`Saldo acumulado até aqui: ${brl(r2(acu))}`;
+  const ms=[];for(let i=5;i>=0;i--){const [y,mm]=m.split('-').map(Number),d=new Date(y,mm-1-i,1);ms.push(d.getFullYear()+'-'+p2(d.getMonth()+1))}
+  const dat=ms.map(k=>{const X=D.tx.filter(t=>t.date.startsWith(k));return[k,sum(X,'in'),sum(X,'out')]}),mx=Math.max(1,...dat.flatMap(d=>[d[1],d[2]]));
+  $('#graf').innerHTML=dat.map(([k,a,b])=>`<div class="col"><div class="bars"><i class="e" style="height:${a/mx*100}%"></i><i class="s" style="height:${b/mx*100}%"></i></div><small>${k.slice(5)}/${k.slice(2,4)}</small></div>`).join('');
+  $('#graf').setAttribute('aria-label','Entradas e saídas por mês: '+dat.map(([k,a,b])=>`${k.slice(5)}/${k.slice(0,4)} entrou ${brl(a)}, saiu ${brl(b)}`).join('; '));
 
   const bar=$('#lbar');
   if(D.lim>0){
@@ -49,22 +56,26 @@ function render(){
   const ord=Object.entries(out).sort((a,b)=>b[1]-a[1]);
   $('#cats').innerHTML=ord.length?ord.map(([c,v])=>{const p=v/sai*100;return `<div class="cat"><div><span>${esc(c)}</span><span>${brl(v)} · ${Math.round(p)}%</span></div><div class="barra"><i style="width:${p}%"></i></div></div>`}).join(''):'<p class="vazio">Sem saídas neste mês.</p>';
 
-  const q=norm($('#busca').value),V=q?L.filter(t=>norm(t.desc+' '+t.cat).includes(q)):L;
-  $('#lista').innerHTML=V.length?V.map(t=>`<li><span class="d">${t.date.slice(8)}/${t.date.slice(5,7)}</span><span>${esc(t.desc)}<small>${esc(t.cat)}</small></span><span class="v ${t.type==='in'?'pos':'neg'}">${t.type==='in'?'+':'−'} ${brl(t.val)}</span><span class="acts"><button data-ed="${t.id}" aria-label="Editar ${esc(t.desc)}">Editar</button><button data-id="${t.id}" aria-label="Apagar ${esc(t.desc)}">Apagar</button></span></li>`).join(''):'<li class="vazio">'+(q?'Nada encontrado.':'Nenhum lançamento neste mês. Registre o primeiro: digite o valor e toque em Adicionar.')+'</li>';
+  const q=norm($('#busca').value),ft=$('#ftipo').value,V=L.filter(t=>(!ft||t.type===ft)&&(!q||norm(t.desc+' '+t.cat).includes(q)));
+  let dia='',lh='';
+  V.forEach(t=>{
+    if(t.date!==dia){dia=t.date;const tot=r2(V.filter(k=>k.date===dia).reduce((a,k)=>a+(k.type==='in'?k.val:-k.val),0));lh+=`<li class="dia"><span>${dia.slice(8)}/${dia.slice(5,7)}</span><span>${brl(tot)}</span></li>`}
+    lh+=`<li><span>${esc(t.desc)}<small>${esc(t.cat)}${t.g?' · repete todo mês':''}</small></span><span class="v ${t.type==='in'?'pos':'neg'}">${t.type==='in'?'+':'−'} ${brl(t.val)}</span><span class="acts"><button data-ed="${t.id}" aria-label="Editar ${esc(t.desc)}">Editar</button><button data-id="${t.id}" aria-label="Apagar ${esc(t.desc)}">Apagar</button></span></li>`});
+  $('#lista').innerHTML=lh||'<li class="vazio">'+(q||ft?'Nada encontrado.':'Nenhum lançamento neste mês. Registre o primeiro: digite o valor e toque em Adicionar.')+'</li>';
 }
 
 let editId=null;
 const addM=(s,i)=>{const [y,m,d]=s.split('-').map(Number),u=new Date(y,m+i,0).getDate(),t=new Date(y,m-1+i,Math.min(d,u));return t.getFullYear()+'-'+p2(t.getMonth()+1)+'-'+p2(t.getDate())};
 const r2=n=>Math.round(n*100)/100;
-function sair(){editId=null;$('#sub').textContent='Adicionar';$('#canc').hidden=true;$('#repbox').hidden=false}
+function sair(){editId=null;$('#sub').textContent='Adicionar';$('#canc').hidden=true;$('#repbox').hidden=false;$('#aplicbox').hidden=true}
 $('#f').addEventListener('submit',e=>{
   e.preventDefault();
   const val=num($('#valor').value),date=$('#data').value,t=tipo(),c=document.querySelector('input[name=cat]:checked').value,desc=$('#desc').value.trim()||c;
   if(!(val>0)||!date){$('#valor').focus();return}
-  if(editId){const x=D.tx.find(k=>k.id===editId);if(x)Object.assign(x,{desc,val:r2(val),type:t,cat:c,date});sair()}
+  if(editId){const x=D.tx.find(k=>k.id===editId);if(x){const gs=x.g&&$('#aplic').checked?D.tx.filter(k=>k.g===x.g&&k.date>=x.date&&k.id!==x.id):[];Object.assign(x,{desc,val:r2(val),type:t,cat:c,date});gs.forEach(k=>Object.assign(k,{desc,val:r2(val),type:t,cat:c}))}sair()}
   else{
-    const n=Math.max(1,Math.min(60,parseInt($('#rep').value)||1)),par=$('#parc').checked&&n>1,b=r2(val/n);
-    for(let i=0;i<n;i++)D.tx.push({id:Date.now()+i,desc:par?`${desc} (${i+1}/${n})`:desc,val:par?(i==n-1?r2(val-b*(n-1)):b):r2(val),type:t,cat:c,date:addM(date,i)});
+    const n=Math.max(1,Math.min(60,parseInt($('#rep').value)||1)),par=$('#parc').checked&&n>1,b=r2(val/n),G=Date.now();
+    for(let i=0;i<n;i++)D.tx.push({id:Date.now()+i,desc:par?`${desc} (${i+1}/${n})`:desc,val:par?(i==n-1?r2(val-b*(n-1)):b):r2(val),type:t,cat:c,date:addM(date,i),g:n>1&&!par?G:undefined});
   }
   D.last[t]=c;D.tipo=t;save();$('#mes').value=date.slice(0,7);
   $('#valor').value='';$('#desc').value='';$('#rep').value=1;$('#parc').checked=false;$('#valor').focus();render();
@@ -72,9 +83,9 @@ $('#f').addEventListener('submit',e=>{
 $('#canc').addEventListener('click',()=>{sair();$('#valor').value='';$('#desc').value=''});
 function editar(id){
   const x=D.tx.find(k=>String(k.id)===id);if(!x)return;editId=x.id;
-  document.querySelector(`input[name=tipo][value=${x.type}]`).checked=true;D.last[x.type]=x.cat;cats();
+  document.querySelector(`input[name=tipo][value=${x.type}]`).checked=true;if(!catL(x.type).includes(x.cat))D.cats[x.type].push(x.cat);D.last[x.type]=x.cat;cats();
   $('#valor').value=String(x.val).replace('.',',');$('#data').value=x.date;$('#desc').value=x.desc;
-  $('#sub').textContent='Salvar alteração';$('#canc').hidden=false;$('#repbox').hidden=true;$('#valor').focus();scrollTo({top:0,behavior:'smooth'});
+  $('#sub').textContent='Salvar alteração';$('#canc').hidden=false;$('#repbox').hidden=true;$('#valor').focus();document.querySelector('details.mais').open=true;$('#aplicbox').hidden=!x.g;$('#aplic').checked=false;scrollTo({top:0,behavior:'smooth'});
 }
 document.querySelectorAll('input[name=tipo]').forEach(r=>r.addEventListener('change',()=>{D.tipo=tipo();save();cats()}));
 $('#mes').addEventListener('change',()=>{if(!$('#mes').value)$('#mes').value=hoje().slice(0,7);syncData();render()});
@@ -129,20 +140,20 @@ function dt(v){
   m=v.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);return m?m[3]+'-'+p2(m[2])+'-'+p2(m[1]):null;
 }
 function importar(R){
-  const H=(R.shift()||[]).map(norm),col=n=>H.findIndex(h=>h.startsWith(n));
-  const [a,b,c,d,e]=['data','tipo','categoria','descri','valor'].map(col);
+  const H=(R.shift()||[]).map(norm),col=n=>H.findIndex(h=>n.some(k=>h.startsWith(k)));
+  const [a,b,c,d,e]=[['data'],['tipo'],['categoria'],['descri','historico','lancamento','memo'],['valor','quantia','amount']].map(col);
   if(a<0||e<0)return msg('Não achei as colunas "Data" e "Valor" na primeira linha da planilha.');
-  const key=t=>[t.date,t.type,norm(t.cat),norm(t.desc),t.val].join('|'),have=new Set(D.tx.map(key));
+  const key=t=>[t.date,t.type,norm(t.cat),norm(t.desc),t.val].join('|'),have={},used={};D.tx.forEach(t=>{const k=key(t);have[k]=(have[k]||0)+1});
   let ok=0,dup=0,bad=0;
   R.forEach((r,i)=>{
     if(!r.some(x=>String(x??'').trim()))return;
     const v=typeof r[e]==='number'?r[e]:num(r[e]??''),date=dt(r[a]??'');
     if(!isFinite(v)||v===0||!date){bad++;return}
     const tp=norm(r[b]),type=tp?(tp[0]==='e'||tp[0]==='r'?'in':'out'):(v<0?'out':'in');
-    const c0=String(r[c]??'').trim(),cat=[...CATS.out,...CATS.in].find(k=>norm(k)===norm(c0))||c0.slice(0,30)||'Outros';
-    const desc=String(r[d]??'').trim().replace(/^'(?=[=+\-@])/,'').slice(0,60)||cat;
+    const c0=String(r[c]??'').trim(),cat=[...catL('out'),...catL('in')].find(k=>norm(k)===norm(c0))||c0.slice(0,30)||'Outros';
+    if(!catL(type).some(k=>norm(k)===norm(cat)))D.cats[type].push(cat);const desc=String(r[d]??'').trim().replace(/^'(?=[=+\-@])/,'').slice(0,60)||cat;
     const t={id:Date.now()+i,desc,val:r2(Math.abs(v)),type,cat,date};
-    if(have.has(key(t))){dup++;return}have.add(key(t));D.tx.push(t);ok++;
+    const k=key(t);if((used[k]||0)<(have[k]||0)){used[k]=(used[k]||0)+1;dup++;return}D.tx.push(t);ok++;
   });
   save();render();msg(`${ok} importados, ${dup} repetidos ignorados, ${bad} linhas com problema.`);
 }
@@ -168,6 +179,14 @@ $('#arqb').addEventListener('change',async e=>{
 });
 
 $('#busca').addEventListener('input',render);
+$('#ftipo').addEventListener('change',render);
+$('#hojeb').addEventListener('click',()=>{$('#mes').value=hoje().slice(0,7);syncData();render()});
+$('#cat').addEventListener('click',e=>{
+  if(e.target.id!=='ncat')return;
+  const n=(prompt('Nome da nova categoria:')||'').trim().slice(0,30);if(!n)return;
+  const t=tipo();if(!catL(t).some(c=>norm(c)===norm(n)))D.cats[t].push(n);
+  D.last[t]=catL(t).find(c=>norm(c)===norm(n));save();cats();
+});
 const pv=()=>{document.body.classList.toggle('priv',!!D.priv);$('#priv').setAttribute('aria-pressed',!!D.priv);$('#priv').textContent=D.priv?'Mostrar valores':'Ocultar valores'};
 $('#priv').addEventListener('click',()=>{D.priv=!D.priv;save();pv()});
 pv();
@@ -175,4 +194,4 @@ pv();
 document.querySelector(`input[name=tipo][value=${D.tipo}]`).checked=true;
 $('#mes').value=hoje().slice(0,7);$('#data').value=hoje();
 if(D.lim>0)$('#lim').value=String(D.lim).replace('.',',');
-cats();render();
+cats();render();save();

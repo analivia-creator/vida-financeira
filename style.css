@@ -1,15 +1,15 @@
-:root{--bg:#eef2f0;--pn:#fff;--tx:#12201c;--mu:#586b64;--bd:#d3ddd9;--pr:#0f6b4f;--prt:#fff;--pos:#12785a;--neg:#c23a4b;--wr:#d98a1c;--r:14px}
-@media (prefers-color-scheme:dark){:root{--bg:#0e1714;--pn:#16231f;--tx:#e6f0ec;--mu:#9bb0a8;--bd:#2a3d37;--pr:#4fcf9f;--prt:#0e1714;--pos:#4fcf9f;--neg:#ff8593;--wr:#f0b04a}}
+:root{--bg:#eef2f0;--pn:#fff;--tx:#12201c;--mu:#465a53;--bd:#d3ddd9;--pr:#0f6b4f;--prt:#fff;--pos:#12785a;--neg:#c23a4b;--wr:#d98a1c;--r:14px}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1714;--pn:#16231f;--tx:#e6f0ec;--mu:#b4c6bf;--bd:#2a3d37;--pr:#4fcf9f;--prt:#0e1714;--pos:#4fcf9f;--neg:#ff8593;--wr:#f0b04a}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
 .sr{position:absolute;left:-9999px}
 .bar{max-width:980px;margin:0 auto;padding:16px;display:flex;justify-content:space-between;align-items:center}
 h1{margin:0;font-size:1.6rem;letter-spacing:-.02em}
 h2{margin:0 0 12px;font-size:1.05rem}
-main{max-width:980px;margin:0 auto;padding:0 16px 24px;display:grid;gap:16px;grid-template-columns:1fr 1.2fr;grid-template-areas:"hero hero" "novo lista" "lim lista" "cats lista" "dados dados"}
+main{max-width:980px;margin:0 auto;padding:0 16px 24px;display:grid;gap:16px;grid-template-columns:1fr 1.2fr;grid-template-areas:"hero hero" "novo lista" "lim lista" "cats lista" "graf lista" "dados dados"}
 .hero{grid-area:hero;padding:8px 0 4px}
 .limite{grid-area:lim}.novo{grid-area:novo}.cats{grid-area:cats}.lista{grid-area:lista}
-.limite,.novo,.cats,.lista,.dados{background:var(--pn);border:1px solid var(--bd);border-radius:var(--r);padding:18px}
+.limite,.novo,.cats,.lista,.dados,.graf{background:var(--pn);border:1px solid var(--bd);border-radius:var(--r);padding:18px}
 .lbl{margin:0;color:var(--mu)}
 .saldo{margin:0;font-size:clamp(2.6rem,9vw,4.4rem);font-weight:700;letter-spacing:-.03em;line-height:1.1;font-variant-numeric:tabular-nums}
 .saldo.neg{color:var(--neg)}
@@ -49,7 +49,7 @@ li .v{font-weight:600;font-variant-numeric:tabular-nums}
 li button{min-height:36px;padding:4px 10px;color:var(--mu)}
 .vazio{color:var(--mu);margin:0}
 footer{max-width:980px;margin:0 auto;padding:0 16px 32px;color:var(--mu);font-size:.9rem}
-@media (max-width:760px){main{grid-template-columns:1fr;grid-template-areas:"hero" "novo" "lim" "cats" "lista" "dados"}}
+@media (max-width:760px){main{grid-template-columns:1fr;grid-template-areas:"hero" "novo" "lim" "cats" "graf" "lista" "dados"}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 .mes{display:flex;gap:6px;align-items:center}
@@ -74,4 +74,20 @@ fieldset.chips{border:0;margin:0 0 12px;padding:0;display:flex;flex-wrap:wrap;ga
 .ck input{width:auto;min-height:0;margin:0}
 .lista input[type=search]{width:11em}
 #canc{width:100%;margin-top:8px}
-.priv .saldo,.priv b,.priv .v,.priv .cat div span:last-child,.priv #ltxt,.priv #cmp{filter:blur(9px)}
+.priv .saldo,.priv b,.priv .v,.priv .cat div span:last-child,.priv #ltxt,.priv #cmp,.priv #acu,.priv li.dia span:last-child{filter:blur(9px)}
+
+.graf{grid-area:graf}
+.aviso{max-width:948px;margin:0 auto 12px;padding:10px 16px;border:2px solid var(--neg);border-radius:10px;background:var(--pn)}
+summary{cursor:pointer;color:var(--mu);margin:0 0 12px;min-height:32px}
+details.mais[open] summary{margin-bottom:12px}
+.chipbtn{border-radius:99px;padding:8px 12px;min-height:0;font-size:.95rem}
+#hojeb{padding:0 10px}
+.lista select{width:auto}
+li{grid-template-columns:1fr auto auto}
+li.dia{grid-template-columns:1fr auto;color:var(--mu);font-size:.85rem;padding:14px 0 4px;border-top:0}
+.graf6{display:flex;gap:8px;align-items:flex-end;height:140px}
+.col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%}
+.bars{flex:1;display:flex;align-items:flex-end;justify-content:center;gap:3px;width:100%}
+.bars i{display:block;width:40%;min-height:2px;border-radius:4px 4px 0 0}
+.bars .e{background:var(--pos)}.bars .s{background:var(--neg)}
+.col small{color:var(--mu)}
